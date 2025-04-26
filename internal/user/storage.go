@@ -10,15 +10,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-// Storage - интерфейс для работы с пользователями в БД.
-type Storage interface {
-	Create(ctx context.Context, user *User) error
-	// GetByID(ctx context.Context, id int) (*User, error)
-	// GetByEmail(ctx context.Context, email string) (*User, error)
-	// Update(ctx context.Context, user *User) error
-	// Delete(ctx context.Context, id int) error
-}
-
 // PostgresStorage реализует Storage для PostgreSQL.
 type UserStorage struct {
 	DB *sql.DB
@@ -34,6 +25,17 @@ func NewStorage() (*UserStorage, error) {
 }
 
 // Добавляет пользователя и возвращает id добавленного пользователя.
-func (u *UserStorage) Create(ctx context.Context, user *User) error {
-	return nil
+func (u *UserStorage) Create(ctx context.Context, user *User) (int, error) {
+	var id int
+	stmt := `INSERT INTO users (name, surname, patronymic, age, sex, nationality)
+			VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
+	row := u.DB.QueryRowContext(ctx, stmt,
+		user.Name,
+		user.Surname,
+		user.Patronymic,
+		user.Age,
+		user.Sex,
+		user.Nationality,
+	)
+	return id, row.Scan(&id)
 }

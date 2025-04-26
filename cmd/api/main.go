@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NarthurN/FIOapi/internal/apiclients"
 	"github.com/NarthurN/FIOapi/internal/db/migrations"
 	"github.com/NarthurN/FIOapi/internal/server"
 	"github.com/NarthurN/FIOapi/internal/user"
@@ -46,16 +47,24 @@ func main() {
 	}
 	log.Info("Применили миграции.")
 
+	log.Info("Инициализация клиента")
+	apiClient := apiclients.New(
+		`https://api.agify.io`,
+		`https://api.genderize.io`,
+		`https://api.nationalize.io`,
+		log,
+	)
+
 	// запускаем сервис для работы с пользователями
 	log.Info("Инициализция сервиса по работе с пользователями userService")
-	userService := user.NewService(userStorage)
+	userService := user.NewService(userStorage, log, apiClient)
 
 	// запускаем сервер
 	log.Info("Инициализция веб-сервера")
 	userServer := server.Init(userService)
 
 	go func() {
-		log.Info("Сервер слушает по адресу https://localhost:8080")
+		log.Info("Сервер слушает по адресу http://localhost:8080")
 		if err := userServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error("Ошибка сервера", "err", err, "op", "main.userServer.ListenAndServe()")
 			os.Exit(1)

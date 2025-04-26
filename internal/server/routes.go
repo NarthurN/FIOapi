@@ -9,7 +9,7 @@ import (
 func InitRoutes(userService *user.UserService) *http.ServeMux {
 	router := http.NewServeMux()
 
-	router.Handle(`/addUser`, userService.AddUser())
+	router.Handle(`POST /addUser`, userService.AddUser())
 
 	return router
 }
