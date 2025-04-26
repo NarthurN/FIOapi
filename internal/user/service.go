@@ -1,18 +1,20 @@
 package user
 
-import (
-    // "context"
-    // "errors"
-)
+import "net/http"
 
-type Service struct {
-    storage Storage
+// "context"
+// "errors"
+
+type UserService struct {
+	Storage Storage
 }
 
-func NewService(storage Storage) *Service {
-    return &Service{storage: storage}
+func NewService(storage Storage) *UserService {
+	return &UserService{Storage: storage}
 }
 
-func (s *Service) Get() string {
-	return "privet"
+func (s *UserService) AddUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+	}
 }
