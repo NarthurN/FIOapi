@@ -38,12 +38,13 @@ func main() {
 	// запускаем миграции для создания таблиц базы данных
 	if err = migrations.RunMigrationsUp(userStorage.DB); err != nil {
 		log.Error(
-			"Не удалось выполнить миграции up", 
-			"err", err, 
+			"Не удалось выполнить миграции up",
+			"err", err,
 			"op", "main.migrations.RunMigrationsUp(userStorage.DB)",
 		)
 		os.Exit(1)
 	}
+	log.Info("Применили миграции.")
 
 	// запускаем сервис для работы с пользователями
 	log.Info("Инициализция сервиса по работе с пользователями userService")
@@ -81,8 +82,8 @@ func main() {
 	log.Info("Откатываем миграции...")
 	if err = migrations.RunMigrationsDown(userStorage.DB); err != nil {
 		log.Error(
-			"Не удалось выполнить миграции down", 
-			"err", err, 
+			"Не удалось выполнить миграции down",
+			"err", err,
 			"op", "main.migrations.RunMigrationsDown(userStorage.DB)",
 		)
 	} else {

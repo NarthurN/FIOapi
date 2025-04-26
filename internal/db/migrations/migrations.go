@@ -3,7 +3,6 @@ package migrations
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -11,10 +10,11 @@ import (
 )
 
 func RunMigrationsUp(db *sql.DB) error {
+	op := "internal/db/migrations/migrations.go.RunMigrationsUp"
 	// Создаем экземпляр драйвера для PostgreSQL
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
-		return fmt.Errorf("невозможно создать драйвер миграции: %w", err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	// Инициализируем мигратор
@@ -22,24 +22,24 @@ func RunMigrationsUp(db *sql.DB) error {
 		"file://internal/db/migrations",
 		"postgres", driver)
 	if err != nil {
-		return fmt.Errorf("ошибка инициализации мигратора: %w", err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	// Применяем миграции up
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("невозможно применить up миграции: %w", err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	log.Println("Миграции up успешно применены.")
 	return nil
 }
 
 func RunMigrationsDown(db *sql.DB) error {
+	op := "internal/db/migrations/migrations.go.RunMigrationsDown"
 	// Создаем экземпляр драйвера для PostgreSQL
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
-		return fmt.Errorf("невозможно создать драйвер миграции: %w", err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	// Инициализируем мигратор
@@ -47,15 +47,14 @@ func RunMigrationsDown(db *sql.DB) error {
 		"file://internal/db/migrations",
 		"postgres", driver)
 	if err != nil {
-		return fmt.Errorf("ошибка инициализации мигратора: %w", err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	// Применяем миграции down
 	err = m.Down()
 	if err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("невозможно применить down миграции: %w", err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	log.Println("Миграции down успешно применены.")
 	return nil
 }

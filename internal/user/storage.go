@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/NarthurN/FIOapi/internal/db/postgresdb"
 
@@ -24,9 +25,10 @@ type UserStorage struct {
 }
 
 func NewStorage() (*UserStorage, error) {
+	op := "internal/user/storage.go.NewStorage"
 	db, err := postgresdb.New()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	return &UserStorage{DB: db}, nil
 }
