@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/NarthurN/FIOapi/internal/apiclients"
@@ -81,7 +82,10 @@ func (s *UserService) AddUser() http.HandlerFunc {
 			http.Error(w, "Ошибка при добавлении в базу данных", http.StatusInternalServerError)
 			return
 		}
+
 		user.ID = id
+		s.log.Debug("Добавлен User", slog.Group("user", "id", id, "name", user.Name))
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(map[string]any{

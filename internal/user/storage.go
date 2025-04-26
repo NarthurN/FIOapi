@@ -6,11 +6,9 @@ import (
 	"fmt"
 
 	"github.com/NarthurN/FIOapi/internal/db/postgresdb"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-// PostgresStorage реализует Storage для PostgreSQL.
+// UserStorage реализует Storage для PostgreSQL.
 type UserStorage struct {
 	DB *sql.DB
 }
