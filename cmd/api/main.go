@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,36 +14,50 @@ import (
 )
 
 func main() {
+	// инициализируем логер
+	log := server.SetupLogger("developmentLocal")
+
 	// инициализация базы хранения пользователей
+	log.Info("Инициализация базы данных")
 	userStorage, err := user.NewStorage()
 	if err != nil {
-		log.Println(err)
+		log.Error("Ошибка инициализации базы данных", "err", err, "op", "main.user.NewStorage()")
+		userStorage.DB.Close()
+		os.Exit(1)
 	}
 
 	defer func() {
-		log.Println("Закрытие базы данных...")
+		log.Info("Закрытие базы данных...")
 		if err := userStorage.DB.Close(); err != nil {
-			log.Println("Ошибка закрытия БД")
+			log.Error("Ошибка закрытия БД", "err", err, "op", "main.userStorage.DB.Close()")
 		} else {
-			log.Println("Закрыли базу данных.")
+			log.Info("Закрыли базу данных.")
 		}
 	}()
 
 	// запускаем миграции для создания таблиц базы данных
 	if err = migrations.RunMigrationsUp(userStorage.DB); err != nil {
-		log.Println(err)
+		log.Error(
+			"Не удалось выполнить миграции up", 
+			"err", err, 
+			"op", "main.migrations.RunMigrationsUp(userStorage.DB)",
+		)
+		os.Exit(1)
 	}
 
 	// запускаем сервис для работы с пользователями
-	service := user.NewService(userStorage)
+	log.Info("Инициализция сервиса по работе с пользователями userService")
+	userService := user.NewService(userStorage)
 
 	// запускаем сервер
-	userServer := server.Init(service)
+	log.Info("Инициализция веб-сервера")
+	userServer := server.Init(userService)
 
 	go func() {
-		log.Println("Server is listening on port 8080...")
+		log.Info("Сервер слушает по адресу https://localhost:8080")
 		if err := userServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Ошибка сервера: %v", err)
+			log.Error("Ошибка сервера", "err", err, "op", "main.userServer.ListenAndServe()")
+			os.Exit(1)
 		}
 	}()
 
@@ -52,22 +65,27 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
-	log.Println("Закрываем сервер...")
+	log.Info("Закрываем сервер...")
 
 	// Graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	if err := userServer.Shutdown(ctx); err != nil {
-		log.Fatal("Ошибка остановки сервера:", err)
+		log.Error("Ошибка остановки сервера", "err", err, "op", "main.userServer.Shutdown(ctx)")
+		os.Exit(1)
 	} else {
-		log.Println("Сервер успешно остановлен.")
+		log.Info("Сервер успешно остановлен.")
 	}
 
-	log.Println("Откатываем миграции...")
+	log.Info("Откатываем миграции...")
 	if err = migrations.RunMigrationsDown(userStorage.DB); err != nil {
-		log.Println(err)
+		log.Error(
+			"Не удалось выполнить миграции down", 
+			"err", err, 
+			"op", "main.migrations.RunMigrationsDown(userStorage.DB)",
+		)
 	} else {
-		log.Println("Откатили миграции.")
+		log.Info("Откатили миграции.")
 	}
 }
