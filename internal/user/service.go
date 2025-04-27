@@ -24,6 +24,7 @@ type Enricher interface {
 	EnrichUserData(ctx context.Context, name string) (*apiclients.EnrichmentData, error)
 }
 
+// UserService используется для связи между базой данных и API
 type UserService struct {
 	log     interfaces.Logger
 	storage Storage
@@ -38,6 +39,16 @@ func NewService(storage Storage, log interfaces.Logger, enrich Enricher) *UserSe
 	}
 }
 
+// @Summary Добавляет пользователя в базу данных
+// @Description Добавляет пользователя и в ответе возвращает пользователя с обогащёнными данными
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Param user body UserJSON true "Данные user (минимум имя и фамилия)"
+// @Success 201 {object} map[string]any "Успешное создание пользователя"
+// @Failure 400 {object} string "Неверные входные данные"
+// @Failure 500 {object} string "Внутренняя ошибка сервера"
+// @Router /addUser [post]
 func (s *UserService) AddUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var incomingUser UserJSON
@@ -97,6 +108,23 @@ func (s *UserService) AddUser() http.HandlerFunc {
 	}
 }
 
+// @Summary Получить список пользователей
+// @Description Возвращает список пользователей с возможностью фильтрации и пагинации
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param name query string false "Фильтр по имени"
+// @Param surname query string false "Фильтр по фамилии"
+// @Param age_from query int false "Минимальный возраст"
+// @Param age_to query int false "Максимальный возраст"
+// @Param sex query string false "Фильтр по полу (male/female)"
+// @Param nationality query string false "Фильтр по национальности"
+// @Param page query int false "Номер страницы" default(1)
+// @Param per_page query int false "Количество записей на странице" default(10)
+// @Success 200 {object} UsersResponse
+// @Failure 400 {object} map[string]string "Неверные параметры запроса"
+// @Failure 500 {object} map[string]string "Внутренняя ошибка сервера"
+// @Router /users [get]
 func (s *UserService) GetUsers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filter := parseFilters(r.URL.Query())
@@ -122,6 +150,21 @@ func (s *UserService) GetUsers() http.HandlerFunc {
 	}
 }
 
+// @Summary Удалить пользователя
+// @Description Удаляет пользователя по указанному ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "ID пользователя"
+// @Success 200 {object} map[string]string
+// @SuccessExample {json} Success-Response:
+//     {
+//         "message": "Пользователь с id 123 удален"
+//     }
+// @Failure 400 {object} map[string]string "Неверный формат ID"
+// @Failure 404 {object} map[string]string "Пользователь не найден"
+// @Failure 500 {object} map[string]string "Внутренняя ошибка сервера"
+// @Router /users/{id} [delete]
 func (s *UserService) DeleteUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		op := "internal/user/service.go.DeleteUser()"
@@ -159,6 +202,22 @@ func (s *UserService) DeleteUser() http.HandlerFunc {
 	}
 }
 
+// @Summary Изменить данные пользователя
+// @Description Обновляет данные пользователя по указанному ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "ID пользователя"
+// @Param user body User true "Обновленные данные пользователя"
+// @Success 200 {object} map[string]string
+// @SuccessExample {json} Success-Response:
+//     {
+//         "message": "Пользователь с id 123 изменён"
+//     }
+// @Failure 400 {object} map[string]string "Неверный формат ID или данных"
+// @Failure 404 {object} map[string]string "Пользователь не найден"
+// @Failure 500 {object} map[string]string "Внутренняя ошибка сервера"
+// @Router /users/{id} [put]
 func (s *UserService) ChangeUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		op := "internal/user/service.go.ChangeUser()"

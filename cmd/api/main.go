@@ -1,3 +1,12 @@
+// @title FIO Service API
+// @version 1.0
+// @description API enriches FIO with age, gender and nationality.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name Arthur
+// @contact.email anezamus-10@mail.ru
+
+// @host localhost:8080
 package main
 
 import (

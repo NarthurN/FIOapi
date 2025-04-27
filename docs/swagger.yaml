@@ -1,0 +1,232 @@
+definitions:
+  user.User:
+    properties:
+      age:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      nationality:
+        type: string
+      patronymic:
+        type: string
+      sex:
+        type: string
+      surname:
+        type: string
+    type: object
+  user.UserJSON:
+    properties:
+      name:
+        type: string
+      patronymic:
+        type: string
+      surname:
+        type: string
+    type: object
+  user.UsersResponse:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total_count:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/user.User'
+        type: array
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: anezamus-10@mail.ru
+    name: Arthur
+  description: API enriches FIO with age, gender and nationality.
+  termsOfService: http://swagger.io/terms/
+  title: FIO Service API
+  version: "1.0"
+paths:
+  /addUser:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет пользователя и в ответе возвращает пользователя с обогащёнными
+        данными
+      parameters:
+      - description: Данные user (минимум имя и фамилия)
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user.UserJSON'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешное создание пользователя
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверные входные данные
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Добавляет пользователя в базу данных
+      tags:
+      - users
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список пользователей с возможностью фильтрации и пагинации
+      parameters:
+      - description: Фильтр по имени
+        in: query
+        name: name
+        type: string
+      - description: Фильтр по фамилии
+        in: query
+        name: surname
+        type: string
+      - description: Минимальный возраст
+        in: query
+        name: age_from
+        type: integer
+      - description: Максимальный возраст
+        in: query
+        name: age_to
+        type: integer
+      - description: Фильтр по полу (male/female)
+        in: query
+        name: sex
+        type: string
+      - description: Фильтр по национальности
+        in: query
+        name: nationality
+        type: string
+      - default: 1
+        description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Количество записей на странице
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.UsersResponse'
+        "400":
+          description: Неверные параметры запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить список пользователей
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет пользователя по указанному ID
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный формат ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Пользователь не найден
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить пользователя
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные пользователя по указанному ID
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновленные данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный формат ID или данных
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Пользователь не найден
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Изменить данные пользователя
+      tags:
+      - users
+swagger: "2.0"
