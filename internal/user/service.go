@@ -16,7 +16,7 @@ import (
 type Storage interface {
 	Create(ctx context.Context, user *User) (int, error)
 	GetUsers(ctx context.Context, filter *UserFilter, pagination *Pagination) ([]User, error)
-	// Update(ctx context.Context, user *User) error
+	UpdateUser(ctx context.Context, id int, changedUser *User) (int, error)
 	DeleteUser(ctx context.Context, id int) (int, error)
 }
 
@@ -144,11 +144,57 @@ func (s *UserService) DeleteUser() http.HandlerFunc {
 			s.log.Debug("Пользователь в БД не найден", "op", op)
 			http.Error(w, "User не найден", http.StatusNotFound)
 			return
+		} else {
+			s.log.Debug("Пользователь удалён", "id", id)
 		}
 
 		// Формируем успешный ответ
 		response := map[string]string{
 			"message": fmt.Sprintf("Пользователь с id %d удален", id),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	}
+}
+
+func (s *UserService) ChangeUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		op := "internal/user/service.go.ChangeUser()"
+		idStr := r.PathValue("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			s.log.Error("Неверный формат id", "err", err, "op", op)
+			http.Error(w, "Неверный формат id", http.StatusBadRequest)
+			return
+		}
+
+		var changedUser *User
+		if err := json.NewDecoder(r.Body).Decode(&changedUser); err != nil {
+			s.log.Debug("Невозможно получить данные из тела запроса")
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		rowsAffected, err := s.storage.UpdateUser(r.Context(), id, changedUser)
+		if err != nil {
+			s.log.Debug("Невозможно получить данные из тела запроса")
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		if rowsAffected == 0 {
+			s.log.Debug("Пользователь в БД не найден", "op", op)
+			http.Error(w, "User не найден", http.StatusNotFound)
+			return
+		} else {
+			s.log.Debug("Пользователь изменён", "id", id)
+		}
+
+		// Формируем успешный ответ
+		response := map[string]string{
+			"message": fmt.Sprintf("Пользователь с id %d изменён", id),
 		}
 
 		w.Header().Set("Content-Type", "application/json")

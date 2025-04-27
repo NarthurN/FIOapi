@@ -143,3 +143,38 @@ func (u *UserStorage) DeleteUser(ctx context.Context, id int) (int, error) {
 
 	return int(rowsAffected), nil
 }
+
+func (u *UserStorage) UpdateUser(ctx context.Context, id int, changedUser *User) (int, error) {
+	op := "internal/user/storage.go.UpdateUser"
+
+	stmt := `
+			UPDATE users 
+			SET name = $1,
+				surname = $2,
+				patronymic = $3,
+				age = $4,
+				sex = $5,
+				nationality = $6
+			WHERE id = $7
+			`
+
+	res, err := u.DB.ExecContext(ctx, stmt,
+		changedUser.Name,
+		changedUser.Surname,
+		changedUser.Patronymic,
+		changedUser.Age,
+		changedUser.Sex,
+		changedUser.Nationality,
+		id,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return int(rowsAffected), nil
+}

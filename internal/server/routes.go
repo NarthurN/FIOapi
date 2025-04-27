@@ -15,7 +15,8 @@ func InitRoutes(userService *user.UserService, log interfaces.Logger) http.Handl
 
 	router.Handle(`POST /addUser`, userService.AddUser())
 	router.Handle(`GET /getUsers`, userService.GetUsers())
-	router.Handle(`DELETE /deleteUsers/{id}`, userService.DeleteUser())
+	router.Handle(`DELETE /deleteUser/{id}`, userService.DeleteUser())
+	router.Handle(`PUT /putUser/{id}`, userService.ChangeUser())
 
 	return ml.Log(router)
 }
