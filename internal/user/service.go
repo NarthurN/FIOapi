@@ -7,17 +7,8 @@ import (
 	"net/http"
 
 	"github.com/NarthurN/FIOapi/internal/apiclients"
+	"github.com/NarthurN/FIOapi/internal/interfaces"
 )
-
-// "context"
-// "errors"
-
-type Logger interface {
-	Debug(msg string, args ...any)
-	Info(msg string, args ...any)
-	Warn(msg string, args ...any)
-	Error(msg string, args ...any)
-}
 
 // Storage - интерфейс для работы с пользователями в БД.
 type Storage interface {
@@ -33,12 +24,12 @@ type Enricher interface {
 }
 
 type UserService struct {
-	log     Logger
+	log     interfaces.Logger
 	storage Storage
 	enrich  Enricher
 }
 
-func NewService(storage Storage, log Logger, enrich Enricher) *UserService {
+func NewService(storage Storage, log interfaces.Logger, enrich Enricher) *UserService {
 	return &UserService{
 		storage: storage,
 		log:     log,

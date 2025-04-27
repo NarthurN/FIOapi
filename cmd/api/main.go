@@ -61,7 +61,7 @@ func main() {
 
 	// запускаем сервер
 	log.Info("Инициализция веб-сервера")
-	userServer := server.Init(userService)
+	userServer := server.Init(userService, log)
 
 	go func() {
 		log.Info("Сервер слушает по адресу http://localhost:8080")
