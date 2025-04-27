@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/NarthurN/FIOapi/config"
 	"github.com/NarthurN/FIOapi/internal/apiclients"
 	"github.com/NarthurN/FIOapi/internal/db/migrations"
 	"github.com/NarthurN/FIOapi/internal/server"
@@ -15,12 +17,15 @@ import (
 )
 
 func main() {
+	// Читаем конфиги из .env файла
+	cfg := config.MustLoad()
+
 	// инициализируем логер
-	log := server.SetupLogger("developmentLocal")
+	log := server.SetupLogger(cfg.ServerMode)
 
 	// инициализация базы хранения пользователей
 	log.Info("Инициализация базы данных")
-	userStorage, err := user.NewStorage()
+	userStorage, err := user.NewStorage(cfg.DBpath)
 	if err != nil {
 		log.Error("Ошибка инициализации базы данных", "err", err, "op", "main.user.NewStorage()")
 		userStorage.DB.Close()
@@ -49,10 +54,11 @@ func main() {
 
 	log.Info("Инициализация клиента")
 	apiClient := apiclients.New(
-		`https://api.agify.io`,
-		`https://api.genderize.io`,
-		`https://api.nationalize.io`,
+		cfg.AgePath,
+		cfg.GenderPath,
+		cfg.NatioPath,
 		log,
+		cfg.ClientTimeout,
 	)
 
 	// запускаем сервис для работы с пользователями
@@ -61,10 +67,11 @@ func main() {
 
 	// запускаем сервер
 	log.Info("Инициализция веб-сервера")
-	userServer := server.Init(userService, log)
+	userServer := server.Init(userService, log, cfg)
 
 	go func() {
-		log.Info("Сервер слушает по адресу http://localhost:8080")
+		msg := fmt.Sprintf("Сервер слушает по адресу http://%s:%s", cfg.ServerHost, cfg.ServerPort)
+		log.Info(msg)
 		if err := userServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error("Ошибка сервера", "err", err, "op", "main.userServer.ListenAndServe()")
 			os.Exit(1)

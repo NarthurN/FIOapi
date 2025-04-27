@@ -75,7 +75,17 @@ func (s *UserService) AddUser() http.HandlerFunc {
 		}
 
 		user.ID = id
-		s.log.Debug("Добавлен User", slog.Group("user", "id", id, "name", user.Name))
+		s.log.Debug(
+			"Добавлен User",
+			slog.Group("user",
+				"id", id,
+				"name", user.Name,
+				"surname", user.Surname,
+				"patronymic", user.Patronymic,
+				"age", user.Age,
+				"sex", user.Sex,
+				"nationality", user.Nationality,
+			))
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)

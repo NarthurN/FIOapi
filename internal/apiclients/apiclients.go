@@ -25,9 +25,9 @@ type Client struct {
 	log               *slog.Logger
 }
 
-func New(ageURL, genderURL, nationalityURL string, log *slog.Logger) *Client {
+func New(ageURL, genderURL, nationalityURL string, log *slog.Logger, ClientTimeoutCfg time.Duration) *Client {
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: ClientTimeoutCfg,
 	}
 	return &Client{
 		ageClient:         age.New(ageURL, client),

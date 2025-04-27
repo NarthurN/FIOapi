@@ -13,9 +13,9 @@ type UserStorage struct {
 	DB *sql.DB
 }
 
-func NewStorage() (*UserStorage, error) {
+func NewStorage(DBpath string) (*UserStorage, error) {
 	op := "internal/user/storage.go.NewStorage"
-	db, err := postgresdb.New()
+	db, err := postgresdb.New(DBpath)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
