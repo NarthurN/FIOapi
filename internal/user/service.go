@@ -13,8 +13,7 @@ import (
 // Storage - интерфейс для работы с пользователями в БД.
 type Storage interface {
 	Create(ctx context.Context, user *User) (int, error)
-	// GetByID(ctx context.Context, id int) (*User, error)
-	// GetByEmail(ctx context.Context, email string) (*User, error)
+	GetUsers(ctx context.Context, filter *UserFilter, pagination *Pagination) ([]User, error)
 	// Update(ctx context.Context, user *User) error
 	// Delete(ctx context.Context, id int) error
 }
@@ -93,5 +92,30 @@ func (s *UserService) AddUser() http.HandlerFunc {
 			"status": "success",
 			"user":   user,
 		})
+	}
+}
+
+func (s *UserService) GetUsers() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filter := parseFilters(r.URL.Query())
+		pagination := parsePagination(r.URL.Query())
+		// Получаем пользователей из БД
+		users, err := s.storage.GetUsers(r.Context(), filter, pagination)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Формируем ответ
+		response := UsersResponse{
+			Users:   users,
+			Page:    pagination.Page,
+			PerPage: pagination.PerPage,
+		}
+
+		s.log.Debug("Получены Users", "количество", len(response.Users))
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
 	}
 }

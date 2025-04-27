@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/NarthurN/FIOapi/internal/db/postgresdb"
 )
@@ -36,4 +37,91 @@ func (u *UserStorage) Create(ctx context.Context, user *User) (int, error) {
 		user.Nationality,
 	)
 	return id, row.Scan(&id)
+}
+
+func (u *UserStorage) GetUsers(ctx context.Context, filter *UserFilter, pagination *Pagination) ([]User, error) {
+	// Базовый запрос
+	query := "SELECT id, name, surname, patronymic, age, sex, nationality FROM users"
+
+	// Добавляем условия фильтрации
+	var conditions []string
+	var args []any
+	argPos := 1
+
+	if filter.Name != "" {
+		conditions = append(conditions, fmt.Sprintf("name ILIKE $%d", argPos))
+		args = append(args, "%"+filter.Name+"%")
+		argPos++
+	}
+
+	if filter.Surname != "" {
+		conditions = append(conditions, fmt.Sprintf("surname ILIKE $%d", argPos))
+		args = append(args, "%"+filter.Surname+"%")
+		argPos++
+	}
+
+	if filter.AgeFrom != -1 {
+		conditions = append(conditions, fmt.Sprintf("age >= $%d", argPos))
+		args = append(args, filter.AgeFrom)
+		argPos++
+	}
+
+	if filter.AgeTo != -1 {
+		conditions = append(conditions, fmt.Sprintf("age <= $%d", argPos))
+		args = append(args, filter.AgeTo)
+		argPos++
+	}
+
+	if filter.Sex != "" {
+		conditions = append(conditions, fmt.Sprintf("sex = $%d", argPos))
+		args = append(args, filter.Sex)
+		argPos++
+	}
+
+	if filter.Nationality != "" {
+		conditions = append(conditions, fmt.Sprintf("nationality = $%d", argPos))
+		args = append(args, filter.Nationality)
+		argPos++
+	}
+
+	// Объединяем условия
+	if len(conditions) > 0 {
+		whereClause := " WHERE " + strings.Join(conditions, " AND ")
+		query += whereClause
+	}
+
+	// Добавляем пагинацию
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argPos, argPos+1)
+	args = append(args, pagination.PerPage, (pagination.Page-1)*pagination.PerPage)
+
+	// Выполняем запрос
+	rows, err := u.DB.QueryContext(context.Background(), query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		var user User
+		err := rows.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Surname,
+			&user.Patronymic,
+			&user.Age,
+			&user.Sex,
+			&user.Nationality,
+		)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

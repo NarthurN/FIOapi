@@ -14,6 +14,7 @@ func InitRoutes(userService *user.UserService, log interfaces.Logger) http.Handl
 	ml := middleware.New(log)
 
 	router.Handle(`POST /addUser`, userService.AddUser())
+	router.Handle(`GET /getUsers`, userService.GetUsers())
 
 	return ml.Log(router)
 }
