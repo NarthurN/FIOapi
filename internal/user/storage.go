@@ -40,6 +40,7 @@ func (u *UserStorage) Create(ctx context.Context, user *User) (int, error) {
 }
 
 func (u *UserStorage) GetUsers(ctx context.Context, filter *UserFilter, pagination *Pagination) ([]User, error) {
+	op := "internal/user/storage.go.GetUsers"
 	// Базовый запрос
 	query := "SELECT id, name, surname, patronymic, age, sex, nationality FROM users"
 
@@ -97,7 +98,7 @@ func (u *UserStorage) GetUsers(ctx context.Context, filter *UserFilter, paginati
 	// Выполняем запрос
 	rows, err := u.DB.QueryContext(context.Background(), query, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	defer rows.Close()
 
@@ -114,14 +115,31 @@ func (u *UserStorage) GetUsers(ctx context.Context, filter *UserFilter, paginati
 			&user.Nationality,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%s: %w", op, err)
 		}
 		users = append(users, user)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return users, nil
+}
+
+func (u *UserStorage) DeleteUser(ctx context.Context, id int) (int, error) {
+	op := "internal/user/storage.go.DeleteUser"
+
+	stmt := "DELETE FROM users WHERE id = $1"
+	res, err := u.DB.ExecContext(ctx, stmt, id)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return int(rowsAffected), nil
 }

@@ -3,8 +3,10 @@ package user
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/NarthurN/FIOapi/internal/apiclients"
 	"github.com/NarthurN/FIOapi/internal/interfaces"
@@ -15,7 +17,7 @@ type Storage interface {
 	Create(ctx context.Context, user *User) (int, error)
 	GetUsers(ctx context.Context, filter *UserFilter, pagination *Pagination) ([]User, error)
 	// Update(ctx context.Context, user *User) error
-	// Delete(ctx context.Context, id int) error
+	DeleteUser(ctx context.Context, id int) (int, error)
 }
 
 type Enricher interface {
@@ -102,7 +104,7 @@ func (s *UserService) GetUsers() http.HandlerFunc {
 		// Получаем пользователей из БД
 		users, err := s.storage.GetUsers(r.Context(), filter, pagination)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
@@ -116,6 +118,41 @@ func (s *UserService) GetUsers() http.HandlerFunc {
 		s.log.Debug("Получены Users", "количество", len(response.Users))
 
 		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	}
+}
+
+func (s *UserService) DeleteUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		op := "internal/user/service.go.DeleteUser()"
+		idStr := r.PathValue("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			s.log.Error("Неверный формат id", "err", err, "op", op)
+			http.Error(w, "Неверный формат id", http.StatusBadRequest)
+			return
+		}
+
+		rowsAffected, err := s.storage.DeleteUser(r.Context(), id)
+		if err != nil {
+			s.log.Error("Ошибка удаления из БД", "err", err, "op", op)
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		if rowsAffected == 0 {
+			s.log.Debug("Пользователь в БД не найден", "op", op)
+			http.Error(w, "User не найден", http.StatusNotFound)
+			return
+		}
+
+		// Формируем успешный ответ
+		response := map[string]string{
+			"message": fmt.Sprintf("Пользователь с id %d удален", id),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(response)
 	}
 }
